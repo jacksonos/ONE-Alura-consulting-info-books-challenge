@@ -45,7 +45,7 @@ public class Main {
 		String json = apiService.getData(BASE_URL + "?search=" + encodedBookTitle);
 		ApiResponse apiResponse = new ConvertData().getData(json, ApiResponse.class);
 		List<Book> bookList = apiResponse.results();
-		System.out.println(bookList);
+//		System.out.println(bookList); Uncomment to see all possible books that match the user's search
 		Optional<Book> bookSearched = bookList.stream()
 				.filter(book -> book.title().toLowerCase().contains(bookTitle.toLowerCase()))
 				.findFirst();
