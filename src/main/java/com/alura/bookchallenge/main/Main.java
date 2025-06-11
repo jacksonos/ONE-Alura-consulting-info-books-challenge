@@ -16,6 +16,7 @@ public class Main {
 	private final Scanner sc = new Scanner(System.in);
 	private final ApiService apiService = new ApiService();
 	private final LocalDate currentDate = LocalDate.now();
+	private ApiResponse cachedResponse; // Variable to save results from the API
 
 	public void showMenu() {
 		System.out.println("=====================");
@@ -23,14 +24,16 @@ public class Main {
 		System.out.println("=====================");
 
 		String BASE_URL = "https://gutendex.com/books/";
-		getTopFiveBooks(BASE_URL);
+		cachedResponse = getApiResults(BASE_URL); // Single API call
+
+		getTopFiveBooks();
 		searchBooks(BASE_URL);
-		getDownloadStats(BASE_URL);
+		getDownloadStats();
 	}
 
-	public void getTopFiveBooks(String BASE_URL) {
+	public void getTopFiveBooks() {
 		System.out.printf("Top five books in %s!%n", currentDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
-		List<Book> bookList = getApiResults(BASE_URL).results();
+		List<Book> bookList = cachedResponse.results(); // Reuse data
 		bookList.stream().filter(book -> book.downloadCount() > 0)
 				.sorted(Comparator.comparing(Book::downloadCount).reversed())
 				.limit(5)
@@ -45,7 +48,7 @@ public class Main {
 		String json = apiService.getData(BASE_URL + "?search=" + encodedBookTitle);
 		ApiResponse apiResponse = new ConvertData().getData(json, ApiResponse.class);
 		List<Book> bookList = apiResponse.results();
-//		System.out.println(bookList); Uncomment to see all possible books that match the user's search
+
 		Optional<Book> bookSearched = bookList.stream()
 				.filter(book -> book.title().toLowerCase().contains(bookTitle.toLowerCase()))
 				.findFirst();
@@ -59,11 +62,15 @@ public class Main {
 		}
 	}
 
-	public void getDownloadStats(String BASE_URL) {
-		List<Book> bookList = getApiResults(BASE_URL).results();
+	public void getDownloadStats() {
+		List<Book> bookList = cachedResponse.results(); // Reuse data
+
 		IntSummaryStatistics statistics = bookList.stream()
-				.filter(book1 -> book1.downloadCount() > 0)
+				.filter(book -> book.downloadCount() > 0)
 				.collect(Collectors.summarizingInt(Book::downloadCount));
+		System.out.println("==================");
+		System.out.println("║ 📊 STATISTICS  ║");
+		System.out.println("==================");
 		System.out.println("Download percentage: " + statistics.getAverage());
 		System.out.println("Download count: " + statistics.getSum());
 		System.out.println("Highest download percentage: " + statistics.getMax());
@@ -75,4 +82,5 @@ public class Main {
 		String json = apiService.getData(BASE_URL);
 		return new ConvertData().getData(json, ApiResponse.class);
 	}
+
 }
